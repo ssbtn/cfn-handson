@@ -1,0 +1,47 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Create base Netoworking resouces(2PublicSubnet)
+Parameters:
+  FirstPublicSubnetIpBlocks: 
+    Type: String
+    Default: 10.0.1.0/24
+  SecondPublicSubnetIpBlocks: 
+    Type: String
+    Default: 10.0.2.0/24
+Resources: 
+  FirstPublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      MapPublicIpOnLaunch: 'true'
+      AvailabilityZone: ap-northeast-1c
+      VpcId: !ImportValue SampleVpcId
+      CidrBlock:
+        Ref: FirstPublicSubnetIpBlocks
+      Tags:
+      - Key: Name
+        Value: SamplePublicSubnet-c
+  SecondPublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      MapPublicIpOnLaunch: 'true'
+      AvailabilityZone: ap-northeast-1d
+      VpcId: !ImportValue SampleVpcId
+      CidrBlock:
+        Ref: SecondPublicSubnetIpBlocks
+      Tags:
+      - Key: Name
+        Value: SamplePublicSubnet-d
+  FirstPublicSubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !ImportValue SampleVpcPublicRouteTableId
+      SubnetId: !Ref FirstPublicSubnet
+  SecondPublicSubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !ImportValue SampleVpcPublicRouteTableId
+      SubnetId: !Ref SecondPublicSubnet
+Outputs:
+  FirstPublicSubnetId:
+    Value: !Ref FirstPublicSubnet
+    Export: 
+      Name: FirstPublicSubnetId

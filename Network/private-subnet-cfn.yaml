@@ -1,0 +1,53 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Create base Netoworking resouces(PouteTable, 2PrivateSubnet)
+Parameters:
+  FirstPrivateSubnetIpBlocks: 
+    Type: String
+    Default: 10.0.3.0/24
+  SecondPrivateSubnetIpBlocks: 
+    Type: String
+    Default: 10.0.4.0/24
+Resources: 
+  PrivateRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !ImportValue SampleVpcId
+      Tags:
+        - Key: Name
+          Value: SamplePrivateRouteTable
+  PrivateRouteDefaultRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      InstanceId: !ImportValue NatInstanceId
+  FirstPrivateSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: ap-northeast-1c
+      VpcId: !ImportValue SampleVpcId
+      CidrBlock:
+        Ref: FirstPrivateSubnetIpBlocks
+      Tags:
+      - Key: Name
+        Value: SamplePrivateSubnet-c
+  SecondPrivateSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: ap-northeast-1d
+      VpcId: !ImportValue SampleVpcId
+      CidrBlock:
+        Ref: SecondPrivateSubnetIpBlocks
+      Tags:
+      - Key: Name
+        Value: SamplePrivateSubnet-d
+  FirstPrivateSubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable
+      SubnetId: !Ref FirstPrivateSubnet
+  SecondPrivateSubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable
+      SubnetId: !Ref SecondPrivateSubnet

@@ -1,0 +1,111 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Create NAT Instance(https://qiita.com/labocho/items/1ca751b09ff549a11060)
+Parameters:
+  NatInstanceIngressIpBlocks:
+    Description: Basically This value equals VpcIpBlocks
+    Type: String
+    Default: 10.0.0.0/20
+Resources:
+  NatInstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: for NATInstance
+      SecurityGroupIngress:
+        - CidrIp:
+            Ref: NatInstanceIngressIpBlocks
+          Description: HTTP
+          FromPort: 80
+          IpProtocol: tcp
+          ToPort: 80
+        - CidrIp:
+            Ref: NatInstanceIngressIpBlocks
+          Description: HTTPS
+          FromPort: 443
+          IpProtocol: tcp
+          ToPort: 443
+      SecurityGroupEgress:
+        - CidrIp: 0.0.0.0/0
+          Description: HTTP
+          FromPort: 80
+          IpProtocol: tcp
+          ToPort: 80
+        - CidrIp: 0.0.0.0/0
+          Description: HTTPS
+          FromPort: 443
+          IpProtocol: tcp
+          ToPort: 443
+      VpcId: !ImportValue SampleVpcId
+      Tags:
+      - Key: Name
+        Value: NatInstanceSecurityGroup
+
+  # "送信元/送信先チェック" を無効にするコマンドを実行するための IAMロール/プロファイル
+  NatInstanceIamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ec2.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        }
+      Policies:
+        -
+          PolicyDocument:
+            {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Sid": "VisualEditor0",
+                  "Effect": "Allow",
+                  "Action": "ec2:ModifyInstanceAttribute",
+                  "Resource": "*"
+                }
+              ]
+            }
+          PolicyName: allow-modify-instance-attribute
+      Tags:
+      - Key: Name
+        Value: NatInstanceIamRole
+  NatInstanceProfile:
+    DependsOn:
+      - NatInstanceIamRole
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - !Ref NatInstanceIamRole
+  NatInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      AvailabilityZone: ap-northeast-1c
+      IamInstanceProfile: !Ref NatInstanceProfile
+      # マーケットプレイスで amzn-ami-vpc-nat で検索して選んだ2021/03/22時点の最新版
+      ImageId: ami-05baea9937e45ef54
+      InstanceType: t3.nano
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: "true"
+          DeviceIndex: "0"
+          GroupSet:
+            - !Ref NatInstanceSecurityGroup
+          SubnetId: !ImportValue FirstPublicSubnetId
+      # "送信元/送信先チェック" を無効にするコマンドを初回起動時に実行
+      UserData:
+        'Fn::Base64': |
+          #!/bin/bash
+          INSTANCEID=$(curl -s -m 60 http://169.254.169.254/latest/meta-data/instance-id)
+          aws --region ap-northeast-1 ec2 modify-instance-attribute --instance-id $INSTANCEID --source-dest-check "{\"Value\": false}"
+      Tags:
+      - Key: Name
+        Value: NatInstance
+Outputs:
+  NatInstanceId:
+    Value: !Ref NatInstance
+    Export: 
+      Name: NatInstanceId

@@ -1,0 +1,51 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Create base VPC resouces(VPC,IGW,RouteTable for PublicSubnet)
+Parameters:
+  VpcIpBlocks: 
+    Type: String
+    Default: 10.0.0.0/20
+Resources: 
+  Vpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock:
+        Ref: VpcIpBlocks
+      EnableDnsSupport: true
+      Tags:
+      - Key: Name
+        Value: SampleVPC
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: SampleInternetGateway
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref Vpc
+      InternetGatewayId: !Ref InternetGateway
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    DependsOn: AttachGateway
+    Properties:
+      VpcId: !Ref Vpc
+      Tags:
+        - Key: Name
+          Value: SamplePublicRouteTable
+  PublicRouteDefaultRoute:
+    Type: AWS::EC2::Route
+    DependsOn: AttachGateway
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+Outputs:
+  SampleVpcId:
+    Value: !Ref Vpc
+    Export: 
+      Name: SampleVpcId
+  SamplePublicRouteTableId:
+    Value: !Ref PublicRouteTable
+    Export: 
+      Name: SampleVpcPublicRouteTableId
