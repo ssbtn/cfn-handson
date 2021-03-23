@@ -1,0 +1,61 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Create Amazon Linux2 Instance on Public Subnet(Include SG and IAMRole for via SSM-SSH)
+Parameters:
+  SampleEC2InstanceIngressIpBlocks:
+    Description: Basically This value equals VpcIpBlocks
+    Type: String
+    Default: 10.0.0.0/20
+  SampleEC2BaseImageId:
+    Description: Amazon Linu2 AMI
+    Type: String
+    Default: ami-0bc8ae3ec8e338cbc
+  SampleEC2SubnetID:
+    Description: Default subnet is public. If use private subnet, set "subnet-0e6c9b3175d03d8f3".
+    Type: String
+#    Default: subnet-097645cd1ba848284
+    Default: subnet-0e6c9b3175d03d8f3
+  SampleEC2KeyName:
+    Type: String
+    Default: MyAWS-Key
+  SampleEC2IamRole:
+    Type: String
+    Default: MySessionManagerInstanceProfile
+Resources:
+  SampleEC2SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: for SampleEC2
+      SecurityGroupIngress:
+        - CidrIp:
+            Ref: SampleEC2InstanceIngressIpBlocks
+          Description: VPC ALL
+          FromPort: -1
+          IpProtocol: -1
+          ToPort: -1
+      VpcId: !ImportValue SampleVpcId
+      Tags:
+      - Key: Name
+        Value: SampleEC2SecurityGroup
+  SampleEC2InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - Ref: SampleEC2IamRole
+  SampleEC2:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: 
+        Ref: SampleEC2BaseImageId
+      InstanceType: t3.nano
+      IamInstanceProfile: !Ref SampleEC2InstanceProfile
+      KeyName:
+        Ref: SampleEC2KeyName
+      SecurityGroupIds:
+        - !Ref SampleEC2SecurityGroup
+      SubnetId:
+        Ref: SampleEC2SubnetID
+      Tags:
+      - Key: Name
+        Value: SampleEC2
+      - Key: auto-stop
+        Value: true
