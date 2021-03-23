@@ -13,6 +13,7 @@ elif [ $# = 1 ] && [ $1 = "delete" ]; then
   CHANGESET_OPTION=""
   EXEC_OPTION="delete-stack"
   aws cloudformation ${EXEC_OPTION} --stack-name ${CFN_STACK_NAME}
+  aws cloudformation wait stack-delete-complete --stack-name ${CFN_STACK_NAME}
   exit
 else
   echo "check change set mode"
