@@ -104,6 +104,8 @@ Resources:
       Tags:
       - Key: Name
         Value: NatInstance
+      - Key: auto-stop
+        Value: true
 Outputs:
   NatInstanceId:
     Value: !Ref NatInstance
