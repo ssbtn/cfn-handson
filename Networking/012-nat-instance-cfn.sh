@@ -20,6 +20,7 @@ fi
 
 #  テンプレートの実行
 aws cloudformation ${EXEC_OPTION} --stack-name ${CFN_STACK_NAME} --template-file ${CFN_TEMPLATE} ${CHANGESET_OPTION} \
+--capabilities CAPABILITY_NAMED_IAM
 #  --parameter-overrides \
 #  NameTagPrefix=prd \
 #  VPCCIDR=10.70
